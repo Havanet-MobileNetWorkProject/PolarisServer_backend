@@ -1,31 +1,37 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.paginator import Paginator
+from django.utils.dateparse import parse_datetime
+
 from .serializers import (
     SignalTest2GSerializer,
     SignalTest3GSerializer,
     SignalTest4GSerializer,
     SignalTest5GSerializer,
 )
-from .models import SignalTest2G, SignalTest3G, SignalTest4G, SignalTest5G
+from .models import (
+    SignalTest2G,
+    SignalTest3G,
+    SignalTest4G,
+    SignalTest5G,
+)
 
-from django.core.paginator import Paginator
-from django.utils.dateparse import parse_datetime
 
 class UnifiedSignalTestView(APIView):
     def post(self, request, *args, **kwargs):
-        generation = request.data.get("generation", None)
+        technology = request.data.get("technology", None)
 
-        if generation == "2G":
+        if technology in ["GSM", "GPRS", "EDGE"]:
             serializer = SignalTest2GSerializer(data=request.data)
-        elif generation == "3G":
+        elif technology in ["UMTS", "HSPA", "HSPA+"]:
             serializer = SignalTest3GSerializer(data=request.data)
-        elif generation == "4G":
+        elif technology in ["LTE", "LTE-Adv"]:
             serializer = SignalTest4GSerializer(data=request.data)
-        elif generation == "5G":
+        elif technology == "5G":
             serializer = SignalTest5GSerializer(data=request.data)
         else:
-            return Response({"error": "Invalid or missing generation field"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid or missing technology field"}, status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
             serializer.save()
@@ -33,27 +39,27 @@ class UnifiedSignalTestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, *args, **kwargs):
-        generation = request.query_params.get("generation")
+        technology = request.query_params.get("technology")
         start = request.query_params.get("start")
         end = request.query_params.get("end")
         client_id = request.query_params.get("client_id")
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 50))
 
-        if generation == "2G":
+        if technology in ["GSM", "GPRS", "EDGE"]:
             model = SignalTest2G
             serializer_class = SignalTest2GSerializer
-        elif generation == "3G":
+        elif technology in ["UMTS", "HSPA", "HSPA+"]:
             model = SignalTest3G
             serializer_class = SignalTest3GSerializer
-        elif generation == "4G":
+        elif technology in ["LTE", "LTE-Adv"]:
             model = SignalTest4G
             serializer_class = SignalTest4GSerializer
-        elif generation == "5G":
+        elif technology == "5G":
             model = SignalTest5G
             serializer_class = SignalTest5GSerializer
         else:
-            return Response({"error": "Missing or invalid generation"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Missing or invalid technology"}, status=status.HTTP_400_BAD_REQUEST)
 
         queryset = model.objects.all()
 
@@ -70,7 +76,7 @@ class UnifiedSignalTestView(APIView):
             if end_dt:
                 queryset = queryset.filter(timestamp__lte=end_dt)
 
-        paginator = Paginator(queryset.order_by('-timestamp'), page_size)
+        paginator = Paginator(queryset.order_by("-timestamp"), page_size)
         paginated = paginator.get_page(page)
 
         serializer = serializer_class(paginated, many=True)
