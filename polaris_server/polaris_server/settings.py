@@ -37,7 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_yasg',
     'cellinfo',
+    'tests',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +54,13 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'polaris_server.urls'
+
+# REST_FRAMEWORK = {
+#     'DEFAULT_RENDERER_CLASSES': [
+#         'rest_framework.renderers.JSONRenderer',
+#     ]
+    
+# }
 
 TEMPLATES = [
     {
