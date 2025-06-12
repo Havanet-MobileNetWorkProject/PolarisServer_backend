@@ -7,6 +7,7 @@ class ThresholdLevelInputSerializer(serializers.Serializer):
     color = serializers.CharField()
     min = serializers.FloatField()
     max = serializers.FloatField()
+    label = serializers.CharField(allow_blank=True, required=False)  
 
 class ThresholdParamInputSerializer(serializers.Serializer):
     name = serializers.CharField()
@@ -20,7 +21,7 @@ class UnifiedThresholdInputSerializer(serializers.Serializer):
 class ThresholdLevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ThresholdLevel
-        fields = ['level', 'color', 'min_value', 'max_value']
+        fields = ['level', 'color', 'min_value', 'max_value', 'label']  
 
 class ThresholdParameterSerializer(serializers.ModelSerializer):
     levels = ThresholdLevelSerializer(many=True, read_only=True)

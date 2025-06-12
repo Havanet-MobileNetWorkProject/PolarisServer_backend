@@ -41,7 +41,8 @@ class ThresholdCreateView(APIView):
                     level=lvl['level'],
                     color=lvl['color'],
                     min_value=lvl['min'],
-                    max_value=lvl['max']
+                    max_value=lvl['max'],
+                    label=lvl.get('label', "")
                 )
 
         return Response({"message": "Thresholds created successfully."}, status=201)

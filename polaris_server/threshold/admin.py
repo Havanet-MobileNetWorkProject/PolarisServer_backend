@@ -1,3 +1,10 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import ThresholdLevel,ThresholdParameter
+
+
+admin.site.register(ThresholdLevel  )
+admin.site.register(ThresholdParameter  )
+
+
+
