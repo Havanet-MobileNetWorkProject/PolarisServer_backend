@@ -1,9 +1,99 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.http import HttpResponse
 from rest_framework import status
 from django.utils.dateparse import parse_datetime
 from threshold.models import ThresholdParameter, ThresholdLevel
 from cellinfo.models import SignalTest2G, SignalTest3G, SignalTest4G, SignalTest5G
+import csv 
+
+
+class ExportCSVView(APIView):
+    def get(self, request):
+        tech = request.query_params.get("technology")
+        param_name = request.query_params.get("parameter")
+        level_filter = request.query_params.get("level")
+        client_id = request.query_params.get("client_id")
+        start = request.query_params.get("start")
+        end = request.query_params.get("end")
+
+        model_map = {
+            "2G": SignalTest2G,
+            "3G": SignalTest3G,
+            "4G": SignalTest4G,
+            "5G": SignalTest5G,
+        }
+
+        selected_models = [tech] if tech in model_map else model_map.keys()
+
+        all_rows = []
+
+        for t in selected_models:
+            model = model_map[t]
+            qs = model.objects.all()
+
+            if client_id:
+                qs = qs.filter(client_id=client_id)
+            if start:
+                start_dt = parse_datetime(start)
+                if start_dt:
+                    qs = qs.filter(timestamp__gte=start_dt)
+            if end:
+                end_dt = parse_datetime(end)
+                if end_dt:
+                    qs = qs.filter(timestamp__lte=end_dt)
+
+            if param_name and level_filter:
+                try:
+                    level_filter = int(level_filter)
+                    threshold_param = ThresholdParameter.objects.filter(name=param_name, technology=t).first()
+                    if threshold_param:
+                        matching_level = threshold_param.levels.filter(level=level_filter).first()
+                        if matching_level:
+                            qs = qs.filter(**{
+                                f"{param_name}__gte": matching_level.min_value,
+                                f"{param_name}__lte": matching_level.max_value
+                            })
+                except ValueError:
+                    pass  # Ignore invalid level
+
+            for obj in qs:
+                all_rows.append([
+                    obj.timestamp,
+                    obj.latitude,
+                    obj.longitude,
+                    getattr(obj, 'rsrp', ''),
+                    getattr(obj, 'rsrq', ''),
+                    getattr(obj, 'rscp', ''),
+                    getattr(obj, 'ecn0', ''),
+                    getattr(obj, 'rxlev', ''),
+                    obj.cell_id,
+                    obj.plmn_id,
+                    getattr(obj, 'node_id', ''),
+                    getattr(obj, 'tac', ''),
+                    getattr(obj, 'lac', ''),
+                    getattr(obj, 'band', ''),
+                    getattr(obj, 'arfcn', ''),
+                    t
+                ])
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="drive_test_export.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'timestamp', 'latitude', 'longitude',
+            'rsrp', 'rsrq', 'rscp', 'ecn0', 'rxlev',
+            'cell_id', 'plmn_id', 'node_id', 'tac', 'lac',
+            'band', 'arfcn', 'scan_tech'
+        ])
+
+        for row in all_rows:
+            writer.writerow(row)
+
+        return response
+
+
 class MapDataView(APIView):
     def get(self, request):
         tech = request.query_params.get("technology")
@@ -118,12 +208,4 @@ def get_signal_component(obj, tech, signal_type):
         "label": label
     }
 
-def get_label_for_level(level):
-    labels = {
-        1: "Very Weak",
-        2: "Weak",
-        3: "Moderate",
-        4: "Good",
-        5: "Excellent"
-    }
-    return labels.get(level, "Unknown")
+
