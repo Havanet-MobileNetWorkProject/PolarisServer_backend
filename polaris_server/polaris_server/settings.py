@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'cellinfo',
     'tests',
+    'threshold',
 ]
 
 MIDDLEWARE = [

@@ -20,6 +20,7 @@ class BaseSignalTest(models.Model):
     longitude = models.FloatField()
     plmn_id = models.CharField(max_length=10)
     cell_id = models.BigIntegerField()
+    node_id = models.BigIntegerField()
     arfcn = models.IntegerField(null=True, blank=True)
     band = models.IntegerField(null=True, blank=True)
 

@@ -36,5 +36,9 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('cellinfo/', include('cellinfo.urls')),
     path('tests/', include('tests.urls')),
+    path('thresholds/', include('threshold.urls')),
+    path('map/', include('map.urls')),
+
+
 
 ]
