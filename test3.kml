@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Polaris Drive Test (4G)</name>
+
+<Placemark>
+    <name>2025-06-07 12:02:00+00:00</name>
+    <description><![CDATA[<b>Client:</b> hamid_4g<br/>
+<b>Time:</b> 2025-06-07 12:02:00+00:00<br/>
+<b>Lat:</b> 35.6892<br/>
+<b>Lon:</b> 51.389<br/>
+<b>Cell ID:</b> 10003<br/>
+<b>PLMN:</b> 43211<br/>
+<b>Node ID:</b> 1<br/>
+<b>TAC:</b> 1236<br/>
+<b>LAC:</b> -<br/>
+<b>Band:</b> 3<br/>
+<b>ARFCN:</b> 1850<br/>
+<b>RSRP:</b> -95.3<br/>
+<b>RSRQ:</b> -10.1]]></description>
+    <Style>
+        <IconStyle>
+            <color>ff00FF00</color>
+            <scale>1.1</scale>
+            <Icon>
+                <href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
+            </Icon>
+        </IconStyle>
+    </Style>
+    <Point>
+        <coordinates>51.389,35.6892,0</coordinates>
+    </Point>
+</Placemark>
+  </Document>
+</kml>
