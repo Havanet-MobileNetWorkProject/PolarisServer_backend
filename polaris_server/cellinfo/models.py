@@ -20,7 +20,6 @@ class BaseSignalTest(models.Model):
     longitude = models.FloatField()
     plmn_id = models.CharField(max_length=10)
     cell_id = models.BigIntegerField()
-    node_id = models.BigIntegerField()
     arfcn = models.IntegerField(null=True, blank=True)
     band = models.IntegerField(null=True, blank=True)
 
@@ -42,20 +41,26 @@ class BaseSignalTest(models.Model):
 
 class SignalTest2G(BaseSignalTest):
     lac = models.IntegerField()
-    rac = models.IntegerField(null=True, blank=True)
+    # rac = models.IntegerField(null=True, blank=True)
     rxlev = models.FloatField(null=True, blank=True)
 
 class SignalTest3G(BaseSignalTest):
     lac = models.IntegerField()
     rscp = models.FloatField()
-    ecn0 = models.FloatField(null=True, blank=True)
+    # ecn0 = models.FloatField(null=True, blank=True)
+    node_id = models.BigIntegerField() 
+
 
 class SignalTest4G(BaseSignalTest):
     tac = models.IntegerField()
     rsrp = models.FloatField()
     rsrq = models.FloatField(null=True, blank=True)
+    node_id = models.BigIntegerField() 
+
 
 class SignalTest5G(BaseSignalTest):
     tac = models.IntegerField()
     rsrp = models.FloatField()
     rsrq = models.FloatField(null=True, blank=True)
+    node_id = models.BigIntegerField() 
+
