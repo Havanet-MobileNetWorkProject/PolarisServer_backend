@@ -5,6 +5,8 @@ from rest_framework import status
 from django.utils.dateparse import parse_datetime
 from threshold.models import ThresholdParameter, ThresholdLevel
 from cellinfo.models import SignalTest2G, SignalTest3G, SignalTest4G, SignalTest5G
+from .serializers import ExportSignalDataSerializer
+
 import csv 
 
 
@@ -138,7 +140,6 @@ def safe_val(value):
     return str(value) if value not in [None, "", "null"] else "-"
 
 
-
 class ExportCSVView(APIView):
     def get(self, request):
         tech = request.query_params.get("technology")
@@ -186,7 +187,7 @@ class ExportCSVView(APIView):
                                 f"{param_name}__lte": matching_level.max_value
                             })
                 except ValueError:
-                    pass  # Ignore invalid level
+                    pass  
 
             for obj in qs:
                 all_rows.append([
@@ -340,3 +341,73 @@ def get_signal_component(obj, tech, signal_type):
     }
 
 
+class ExportJSONView(APIView):
+    def get(self, request):
+        tech = request.query_params.get("technology")
+        param_name = request.query_params.get("parameter")
+        level_filter = request.query_params.get("level")
+        client_id = request.query_params.get("client_id")
+        start = request.query_params.get("start")
+        end = request.query_params.get("end")
+
+        model_map = {
+            "2G": SignalTest2G,
+            "3G": SignalTest3G,
+            "4G": SignalTest4G,
+            "5G": SignalTest5G,
+        }
+
+        selected_models = [tech] if tech in model_map else model_map.keys()
+        result_data = []
+
+        for t in selected_models:
+            model = model_map[t]
+            qs = model.objects.all()
+
+            if client_id:
+                qs = qs.filter(client_id=client_id)
+            if start:
+                start_dt = parse_datetime(start)
+                if start_dt:
+                    qs = qs.filter(timestamp__gte=start_dt)
+            if end:
+                end_dt = parse_datetime(end)
+                if end_dt:
+                    qs = qs.filter(timestamp__lte=end_dt)
+
+            if param_name and level_filter:
+                try:
+                    level_filter = int(level_filter)
+                    threshold_param = ThresholdParameter.objects.filter(name=param_name, technology=t).first()
+                    if threshold_param:
+                        matching_level = threshold_param.levels.filter(level=level_filter).first()
+                        if matching_level:
+                            qs = qs.filter(**{
+                                f"{param_name}__gte": matching_level.min_value,
+                                f"{param_name}__lte": matching_level.max_value
+                            })
+                except ValueError:
+                    pass
+
+            for obj in qs:
+                result_data.append({
+                    'timestamp': obj.timestamp,
+                    'latitude': obj.latitude,
+                    'longitude': obj.longitude,
+                    'rsrp': getattr(obj, 'rsrp', None),
+                    'rsrq': getattr(obj, 'rsrq', None),
+                    'rscp': getattr(obj, 'rscp', None),
+                    'ecn0': getattr(obj, 'ecn0', None),
+                    'rxlev': getattr(obj, 'rxlev', None),
+                    'cell_id': obj.cell_id,
+                    'plmn_id': obj.plmn_id,
+                    'node_id': getattr(obj, 'node_id', None),
+                    'tac': getattr(obj, 'tac', None),
+                    'lac': getattr(obj, 'lac', None),
+                    'band': getattr(obj, 'band', None),
+                    'arfcn': getattr(obj, 'arfcn', None),
+                    'scan_tech': t,
+                })
+
+        serializer = ExportSignalDataSerializer(result_data, many=True)
+        return Response(serializer.data, status=200)
