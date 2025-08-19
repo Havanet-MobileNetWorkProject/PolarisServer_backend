@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from authentication.models import User
 from .models import ThresholdParameter, ThresholdLevel
 
 
@@ -21,11 +23,12 @@ class UnifiedThresholdInputSerializer(serializers.Serializer):
 class ThresholdLevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = ThresholdLevel
-        fields = ['level', 'color', 'min_value', 'max_value', 'label']  
+        fields = ['level', 'color', 'min_value', 'max_value']  
+
 
 class ThresholdParameterSerializer(serializers.ModelSerializer):
     levels = ThresholdLevelSerializer(many=True, read_only=True)
 
     class Meta:
         model = ThresholdParameter
-        fields = ['id', 'name', 'technology', 'signal_type', 'levels']
+        fields = [ 'user_id','name', 'technology', 'signal_type', 'levels']

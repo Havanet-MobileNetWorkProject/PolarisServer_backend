@@ -13,7 +13,7 @@ import csv
 
 GEN_TECH_PARAMS = {
     "2G": [("rxlev", "RxLev")],
-    "3G": [("rscp", "RSCP"), ("ecn0", "EC/N0")],
+    "3G": [("rscp", "RSCP")],
     "4G": [("rsrp", "RSRP"), ("rsrq", "RSRQ")],
     "5G": [("rsrp", "RSRP"), ("rsrq", "RSRQ")],
 }
@@ -197,7 +197,6 @@ class ExportCSVView(APIView):
                     getattr(obj, 'rsrp', ''),
                     getattr(obj, 'rsrq', ''),
                     getattr(obj, 'rscp', ''),
-                    getattr(obj, 'ecn0', ''),
                     getattr(obj, 'rxlev', ''),
                     obj.cell_id,
                     obj.plmn_id,
@@ -215,7 +214,7 @@ class ExportCSVView(APIView):
         writer = csv.writer(response)
         writer.writerow([
             'timestamp', 'latitude', 'longitude',
-            'rsrp', 'rsrq', 'rscp', 'ecn0', 'rxlev',
+            'rsrp', 'rsrq', 'rscp', 'rxlev',
             'cell_id', 'plmn_id', 'node_id', 'tac', 'lac',
             'band', 'arfcn', 'scan_tech'
         ])
@@ -311,7 +310,7 @@ class MapDataView(APIView):
 def get_signal_component(obj, tech, signal_type):
     param_map = {
         "2G": {"quantity": "rxlev"},
-        "3G": {"quantity": "rscp", "quality": "ecn0"},
+        "3G": {"quantity": "rscp"},
         "4G": {"quantity": "rsrp", "quality": "rsrq"},
         "5G": {"quantity": "rsrp", "quality": "rsrq"},  
     }
@@ -394,11 +393,6 @@ class ExportJSONView(APIView):
                     'timestamp': obj.timestamp,
                     'latitude': obj.latitude,
                     'longitude': obj.longitude,
-                    'rsrp': getattr(obj, 'rsrp', None),
-                    'rsrq': getattr(obj, 'rsrq', None),
-                    'rscp': getattr(obj, 'rscp', None),
-                    'ecn0': getattr(obj, 'ecn0', None),
-                    'rxlev': getattr(obj, 'rxlev', None),
                     'cell_id': obj.cell_id,
                     'plmn_id': obj.plmn_id,
                     'node_id': getattr(obj, 'node_id', None),
@@ -407,6 +401,11 @@ class ExportJSONView(APIView):
                     'band': getattr(obj, 'band', None),
                     'arfcn': getattr(obj, 'arfcn', None),
                     'scan_tech': t,
+                    'rsrp': getattr(obj, 'rsrp', None),
+                    'rsrq': getattr(obj, 'rsrq', None),
+                    'rscp': getattr(obj, 'rscp', None),
+                    'rxlev': getattr(obj, 'rxlev', None),
+
                 })
 
         serializer = ExportSignalDataSerializer(result_data, many=True)

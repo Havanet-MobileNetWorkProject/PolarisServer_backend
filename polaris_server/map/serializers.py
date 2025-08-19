@@ -7,7 +7,6 @@ class ExportSignalDataSerializer(serializers.Serializer):
     rsrp = serializers.FloatField(allow_null=True, required=False)
     rsrq = serializers.FloatField(allow_null=True, required=False)
     rscp = serializers.FloatField(allow_null=True, required=False)
-    ecn0 = serializers.FloatField(allow_null=True, required=False)
     rxlev = serializers.FloatField(allow_null=True, required=False)
     cell_id = serializers.IntegerField()
     plmn_id = serializers.CharField()

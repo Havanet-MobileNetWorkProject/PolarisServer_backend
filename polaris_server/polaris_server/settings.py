@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'cellinfo',
     'tests',
     'threshold',
+    'authentication',
 ]
 
 MIDDLEWARE = [
@@ -56,12 +57,14 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'polaris_server.urls'
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_RENDERER_CLASSES': [
-#         'rest_framework.renderers.JSONRenderer',
-#     ]
-    
-# }
+AUTH_USER_MODEL = 'authentication.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
 
 TEMPLATES = [
     {
