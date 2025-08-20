@@ -5,18 +5,23 @@ from django.core.paginator import Paginator
 
 from .models import *
 from .serializers import *
+from rest_framework.permissions import IsAuthenticated
+
 
 class FilteredListMixin:
     def filter_queryset(self, model, serializer_class, request, time_field='timestamp'):
-        queryset = model.objects.all()
         client_id = request.query_params.get("client_id")
         start = request.query_params.get("start")
         end = request.query_params.get("end")
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 50))
 
-        if client_id:
-            queryset = queryset.filter(client_id=client_id)
+        if request.user.is_staff:
+            queryset = model.objects.all()
+            if client_id:
+                queryset = queryset.filter(user__id=client_id)  
+        else:
+            queryset = model.objects.filter(user=request.user)
 
         if start:
             start_dt = parse_datetime(start)
@@ -40,10 +45,11 @@ class FilteredListMixin:
 
 
 class PingTestView(APIView, FilteredListMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = PingTestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -52,10 +58,11 @@ class PingTestView(APIView, FilteredListMixin):
 
 
 class DNSTestView(APIView, FilteredListMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = DNSTestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -64,10 +71,11 @@ class DNSTestView(APIView, FilteredListMixin):
 
 
 class WebResponseTestView(APIView, FilteredListMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = WebResponseTestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -76,10 +84,11 @@ class WebResponseTestView(APIView, FilteredListMixin):
 
 
 class HTTPUploadTestView(APIView, FilteredListMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = HTTPUploadTestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -88,10 +97,11 @@ class HTTPUploadTestView(APIView, FilteredListMixin):
 
 
 class HTTPDownloadTestView(APIView, FilteredListMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = HTTPDownloadTestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
@@ -100,10 +110,11 @@ class HTTPDownloadTestView(APIView, FilteredListMixin):
 
 
 class SMSTestView(APIView, FilteredListMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = SMSTestSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 

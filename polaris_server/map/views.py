@@ -6,19 +6,20 @@ from django.utils.dateparse import parse_datetime
 from threshold.models import ThresholdParameter, ThresholdLevel
 from cellinfo.models import SignalTest2G, SignalTest3G, SignalTest4G, SignalTest5G
 from .serializers import ExportSignalDataSerializer
-
 import csv 
+from rest_framework.permissions import IsAuthenticated
 
 
 
 GEN_TECH_PARAMS = {
     "2G": [("rxlev", "RxLev")],
-    "3G": [("rscp", "RSCP"), ("ecn0", "EC/N0")],
+    "3G": [("rscp", "RSCP")],
     "4G": [("rsrp", "RSRP"), ("rsrq", "RSRQ")],
     "5G": [("rsrp", "RSRP"), ("rsrq", "RSRQ")],
 }
 
 class ExportKMLView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -37,9 +38,13 @@ class ExportKMLView(APIView):
         if not model:
             return Response({"error": "Invalid or missing technology"}, status=400)
 
-        qs = model.objects.all()
-        if client_id:
-            qs = qs.filter(client_id=client_id)
+        if request.user.is_staff:
+            qs = model.objects.all()
+            if client_id:
+                qs = qs.filter(user__id=client_id)
+        else:
+            qs = model.objects.filter(user=request.user)
+
         if start:
             start_dt = parse_datetime(start)
             if start_dt:
@@ -141,6 +146,7 @@ def safe_val(value):
 
 
 class ExportCSVView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -162,10 +168,13 @@ class ExportCSVView(APIView):
 
         for t in selected_models:
             model = model_map[t]
-            qs = model.objects.all()
+            if request.user.is_staff:
+                qs = model.objects.all()
+                if client_id:
+                    qs = qs.filter(user__id=client_id)
+            else:
+                qs = model.objects.filter(user=request.user)
 
-            if client_id:
-                qs = qs.filter(client_id=client_id)
             if start:
                 start_dt = parse_datetime(start)
                 if start_dt:
@@ -197,7 +206,6 @@ class ExportCSVView(APIView):
                     getattr(obj, 'rsrp', ''),
                     getattr(obj, 'rsrq', ''),
                     getattr(obj, 'rscp', ''),
-                    getattr(obj, 'ecn0', ''),
                     getattr(obj, 'rxlev', ''),
                     obj.cell_id,
                     obj.plmn_id,
@@ -215,7 +223,7 @@ class ExportCSVView(APIView):
         writer = csv.writer(response)
         writer.writerow([
             'timestamp', 'latitude', 'longitude',
-            'rsrp', 'rsrq', 'rscp', 'ecn0', 'rxlev',
+            'rsrp', 'rsrq', 'rscp', 'rxlev',
             'cell_id', 'plmn_id', 'node_id', 'tac', 'lac',
             'band', 'arfcn', 'scan_tech'
         ])
@@ -227,6 +235,7 @@ class ExportCSVView(APIView):
 
 
 class MapDataView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -247,9 +256,13 @@ class MapDataView(APIView):
         if not model:
             return Response({"error": "Invalid technology."}, status=400)
 
-        qs = model.objects.all()
-        if client_id:
-            qs = qs.filter(client_id=client_id)
+        if request.user.is_staff:
+            qs = model.objects.all()
+            if client_id:
+                qs = qs.filter(user__id=client_id)
+        else:
+            qs = model.objects.filter(user=request.user)
+
         if start:
             start_dt = parse_datetime(start)
             if start_dt:
@@ -311,7 +324,7 @@ class MapDataView(APIView):
 def get_signal_component(obj, tech, signal_type):
     param_map = {
         "2G": {"quantity": "rxlev"},
-        "3G": {"quantity": "rscp", "quality": "ecn0"},
+        "3G": {"quantity": "rscp"},
         "4G": {"quantity": "rsrp", "quality": "rsrq"},
         "5G": {"quantity": "rsrp", "quality": "rsrq"},  
     }
@@ -342,6 +355,7 @@ def get_signal_component(obj, tech, signal_type):
 
 
 class ExportJSONView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -362,10 +376,13 @@ class ExportJSONView(APIView):
 
         for t in selected_models:
             model = model_map[t]
-            qs = model.objects.all()
+            if request.user.is_staff:
+                qs = model.objects.all()
+                if client_id:
+                    qs = qs.filter(user__id=client_id)
+            else:
+                qs = model.objects.filter(user=request.user)
 
-            if client_id:
-                qs = qs.filter(client_id=client_id)
             if start:
                 start_dt = parse_datetime(start)
                 if start_dt:
@@ -394,11 +411,6 @@ class ExportJSONView(APIView):
                     'timestamp': obj.timestamp,
                     'latitude': obj.latitude,
                     'longitude': obj.longitude,
-                    'rsrp': getattr(obj, 'rsrp', None),
-                    'rsrq': getattr(obj, 'rsrq', None),
-                    'rscp': getattr(obj, 'rscp', None),
-                    'ecn0': getattr(obj, 'ecn0', None),
-                    'rxlev': getattr(obj, 'rxlev', None),
                     'cell_id': obj.cell_id,
                     'plmn_id': obj.plmn_id,
                     'node_id': getattr(obj, 'node_id', None),
@@ -407,6 +419,11 @@ class ExportJSONView(APIView):
                     'band': getattr(obj, 'band', None),
                     'arfcn': getattr(obj, 'arfcn', None),
                     'scan_tech': t,
+                    'rsrp': getattr(obj, 'rsrp', None),
+                    'rsrq': getattr(obj, 'rsrq', None),
+                    'rscp': getattr(obj, 'rscp', None),
+                    'rxlev': getattr(obj, 'rxlev', None),
+
                 })
 
         serializer = ExportSignalDataSerializer(result_data, many=True)

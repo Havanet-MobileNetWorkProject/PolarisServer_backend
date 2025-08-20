@@ -1,5 +1,7 @@
 from django.db import models
 
+from authentication.models import User
+
 TECHNOLOGY_CHOICES = [
     ('GSM', 'GSM'),
     ('GPRS', 'GPRS'),
@@ -13,7 +15,6 @@ TECHNOLOGY_CHOICES = [
 ]
 
 class BaseSignalTest(models.Model):
-    client_id = models.CharField(max_length=100)
     timestamp = models.DateTimeField()
     technology = models.CharField(max_length=20, choices=TECHNOLOGY_CHOICES)
     latitude = models.FloatField()
@@ -40,11 +41,13 @@ class BaseSignalTest(models.Model):
         abstract = True
 
 class SignalTest2G(BaseSignalTest):
+    user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="signal_2g")
     lac = models.IntegerField()
     # rac = models.IntegerField(null=True, blank=True)
     rxlev = models.FloatField(null=True, blank=True)
 
 class SignalTest3G(BaseSignalTest):
+    user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="signal_3g")
     lac = models.IntegerField()
     rscp = models.FloatField()
     # ecn0 = models.FloatField(null=True, blank=True)
@@ -52,6 +55,7 @@ class SignalTest3G(BaseSignalTest):
 
 
 class SignalTest4G(BaseSignalTest):
+    user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="signal_4g")
     tac = models.IntegerField()
     rsrp = models.FloatField()
     rsrq = models.FloatField(null=True, blank=True)
@@ -59,6 +63,7 @@ class SignalTest4G(BaseSignalTest):
 
 
 class SignalTest5G(BaseSignalTest):
+    user = models.ForeignKey(User,on_delete=models.CASCADE, related_name="signal_5g")
     tac = models.IntegerField()
     rsrp = models.FloatField()
     rsrq = models.FloatField(null=True, blank=True)

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_datetime
+from rest_framework.permissions import IsAuthenticated
 
 from .serializers import (
     SignalTest2GSerializer,
@@ -19,6 +20,7 @@ from .models import (
 
 
 class UnifiedSignalTestView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         technology = request.data.get("technology", None)
 
@@ -34,7 +36,7 @@ class UnifiedSignalTestView(APIView):
             return Response({"error": "Invalid or missing technology field"}, status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -60,11 +62,13 @@ class UnifiedSignalTestView(APIView):
             serializer_class = SignalTest5GSerializer
         else:
             return Response({"error": "Missing or invalid technology"}, status=status.HTTP_400_BAD_REQUEST)
-
-        queryset = model.objects.all()
-
-        if client_id:
-            queryset = queryset.filter(client_id=client_id)
+        
+        if request.user.is_staff:
+            queryset = model.objects.all()
+            if client_id:
+                queryset = queryset.filter(user__id=client_id)
+        else:
+            queryset = model.objects.filter(user=request.user)
 
         if start:
             start_dt = parse_datetime(start)

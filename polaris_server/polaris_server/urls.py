@@ -38,6 +38,8 @@ urlpatterns = [
     path('tests/', include('tests.urls')),
     path('thresholds/', include('threshold.urls')),
     path('map/', include('map.urls')),
+    path("auth/", include("authentication.urls")),
+
 
 
 

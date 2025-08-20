@@ -4,8 +4,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import ThresholdParameter, ThresholdLevel
 from .serializers import UnifiedThresholdInputSerializer, ThresholdParameterSerializer
+from rest_framework.permissions import IsAuthenticated
 
 class ThresholdCreateView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         serializer = UnifiedThresholdInputSerializer(data=request.data)
         if not serializer.is_valid():
@@ -15,13 +17,6 @@ class ThresholdCreateView(APIView):
         technology = data['technology']
         parameters = data['parameters']
 
-        if technology in ['3G', '4G']:
-            types = {p['signal_type'] for p in parameters}
-            if 'quantity' not in types or 'quality' not in types:
-                return Response(
-                    {"error": f"{technology} must include both quantity and quality parameters."},
-                    status=400
-                )
 
         for param in parameters:
             if len(param['levels']) < 3:
@@ -29,11 +24,16 @@ class ThresholdCreateView(APIView):
                     {"error": f"Parameter '{param['name']}' must have at least 3 levels."}, status=400
                 )
 
-            param_obj = ThresholdParameter.objects.create(
+            param_obj = ThresholdParameter.objects.filter(
                 name=param['name'],
                 technology=technology,
-                signal_type=param['signal_type']
-            )
+                signal_type=param['signal_type'],
+                user=request.user.id
+            ).first()
+
+            param_obj.levels.all().delete()
+
+
 
             for lvl in param['levels']:
                 ThresholdLevel.objects.create(
@@ -42,23 +42,33 @@ class ThresholdCreateView(APIView):
                     color=lvl['color'],
                     min_value=lvl['min'],
                     max_value=lvl['max'],
-                    label=lvl.get('label', "")
                 )
 
-        return Response({"message": "Thresholds created successfully."}, status=201)
+        return Response({"message": "Thresholds created/updated successfully."}, status=201)
+
 
 
 class ThresholdListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+
     serializer_class = ThresholdParameterSerializer
 
     def get_queryset(self):
         qs = ThresholdParameter.objects.prefetch_related("levels").all()
         tech = self.request.query_params.get("technology")
         name = self.request.query_params.get("name")
+        client_id= self.request.query_params.get("client_id")
+        if self.request.user.is_staff:
+            if client_id:
+                qs = qs.filter(user__id=client_id) 
+        else:
+            qs = qs.filter(user=self.request.user)
+
 
         if tech:
             qs = qs.filter(technology=tech)
         if name:
             qs = qs.filter(name=name)
+
 
         return qs
