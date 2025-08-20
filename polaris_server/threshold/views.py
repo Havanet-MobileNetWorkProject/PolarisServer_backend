@@ -57,14 +57,18 @@ class ThresholdListView(ListAPIView):
         qs = ThresholdParameter.objects.prefetch_related("levels").all()
         tech = self.request.query_params.get("technology")
         name = self.request.query_params.get("name")
-        user_id= self.request.query_params.get("user_id")
+        client_id= self.request.query_params.get("client_id")
+        if self.request.user.is_staff:
+            if client_id:
+                qs = qs.filter(user__id=client_id) 
+        else:
+            qs = qs.filter(user=self.request.user)
 
 
         if tech:
             qs = qs.filter(technology=tech)
         if name:
             qs = qs.filter(name=name)
-        if user_id:
-            qs = qs.filter(user=user_id)
+
 
         return qs

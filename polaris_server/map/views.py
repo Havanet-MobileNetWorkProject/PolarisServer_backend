@@ -6,8 +6,8 @@ from django.utils.dateparse import parse_datetime
 from threshold.models import ThresholdParameter, ThresholdLevel
 from cellinfo.models import SignalTest2G, SignalTest3G, SignalTest4G, SignalTest5G
 from .serializers import ExportSignalDataSerializer
-
 import csv 
+from rest_framework.permissions import IsAuthenticated
 
 
 
@@ -19,6 +19,7 @@ GEN_TECH_PARAMS = {
 }
 
 class ExportKMLView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -37,9 +38,13 @@ class ExportKMLView(APIView):
         if not model:
             return Response({"error": "Invalid or missing technology"}, status=400)
 
-        qs = model.objects.all()
-        if client_id:
-            qs = qs.filter(client_id=client_id)
+        if request.user.is_staff:
+            qs = model.objects.all()
+            if client_id:
+                qs = qs.filter(user__id=client_id)
+        else:
+            qs = model.objects.filter(user=request.user)
+
         if start:
             start_dt = parse_datetime(start)
             if start_dt:
@@ -141,6 +146,7 @@ def safe_val(value):
 
 
 class ExportCSVView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -162,10 +168,13 @@ class ExportCSVView(APIView):
 
         for t in selected_models:
             model = model_map[t]
-            qs = model.objects.all()
+            if request.user.is_staff:
+                qs = model.objects.all()
+                if client_id:
+                    qs = qs.filter(user__id=client_id)
+            else:
+                qs = model.objects.filter(user=request.user)
 
-            if client_id:
-                qs = qs.filter(client_id=client_id)
             if start:
                 start_dt = parse_datetime(start)
                 if start_dt:
@@ -226,6 +235,7 @@ class ExportCSVView(APIView):
 
 
 class MapDataView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -246,9 +256,13 @@ class MapDataView(APIView):
         if not model:
             return Response({"error": "Invalid technology."}, status=400)
 
-        qs = model.objects.all()
-        if client_id:
-            qs = qs.filter(client_id=client_id)
+        if request.user.is_staff:
+            qs = model.objects.all()
+            if client_id:
+                qs = qs.filter(user__id=client_id)
+        else:
+            qs = model.objects.filter(user=request.user)
+
         if start:
             start_dt = parse_datetime(start)
             if start_dt:
@@ -341,6 +355,7 @@ def get_signal_component(obj, tech, signal_type):
 
 
 class ExportJSONView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         tech = request.query_params.get("technology")
         param_name = request.query_params.get("parameter")
@@ -361,10 +376,13 @@ class ExportJSONView(APIView):
 
         for t in selected_models:
             model = model_map[t]
-            qs = model.objects.all()
+            if request.user.is_staff:
+                qs = model.objects.all()
+                if client_id:
+                    qs = qs.filter(user__id=client_id)
+            else:
+                qs = model.objects.filter(user=request.user)
 
-            if client_id:
-                qs = qs.filter(client_id=client_id)
             if start:
                 start_dt = parse_datetime(start)
                 if start_dt:
